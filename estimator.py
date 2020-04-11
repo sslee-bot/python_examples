@@ -3,32 +3,41 @@ import sympy as sym
 
 
 class FIR:
-    def __init__(self, f, h, state_set, input_set, N):
+    def __init__(self, f, h, state_set, input_set, N, x_init=None, z_init=None):
+        # Scalar values
         self.dim_x = len(f)
         self.dim_z = len(h)
         self.dim_u = len(input_set)
         self.N = N
         self.alpha = True
-
-        self.x_hat = np.ones(self.dim_x)
-        self.z = np.zeros(self.dim_z)
+        # Initial state, measurement, control input
+        if x_init is None:
+            self.x_hat = np.zeros(self.dim_x)
+        else:
+            self.x_hat = x_init
+        if z_init is None:
+            self.z = np.zeros(self.dim_z)
+        else:
+            self.z = z_init
         self.u = np.zeros(self.dim_u)
-        self.f_hat = np.zeros(self.dim_x)
-        self.h_hat = np.zeros(self.dim_z)
         # Functions
         self.f_func = sym.lambdify(state_set + input_set, f)
         self.h_func = sym.lambdify(state_set + input_set, h)
         self.Jacobian_F_func = sym.lambdify(state_set + input_set, f.jacobian(state_set))
         self.Jacobian_H_func = sym.lambdify(state_set + input_set, h.jacobian(state_set))
 
-        # self.F = self.Jacobian_F_func(3,3,0,0,0,0.1)
-        # self.H = self.Jacobian_H_func(3,3,0,0,0,0.1)
+        self.f_hat = np.zeros(self.dim_x)
+        self.h_hat = np.zeros(self.dim_z)
         self.F = np.eye(self.dim_x)
         self.H = np.ones((self.dim_z, self.dim_x))
         self.f_hat = np.zeros(self.dim_x)
         self.h_hat = np.zeros(self.dim_z)
         self.z_tilde = np.zeros(self.dim_z)
         self.u_tilde = np.zeros(self.dim_x)
+
+        self.evaluate_current_values(self.z, self.u, self.alpha)
+        self.evaluate_tilde()
+
         self.F_array = np.tile(self.F, (N, 1, 1))
         self.H_array = np.tile(self.H, (N, 1, 1))
         self.z_tilde_array = np.tile(self.z_tilde, (N, 1, 1))

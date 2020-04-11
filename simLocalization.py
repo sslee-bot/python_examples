@@ -5,7 +5,6 @@ import estimator
 import matplotlib.pyplot as plt
 import time
 
-####### System information #######
 # State variables
 x, y, theta = sym.symbols('x y theta')
 # Control inputs, Time-varying parameters
@@ -26,17 +25,18 @@ h[2] = sym.sqrt((x - anchor_pos[2][0]) ** 2 + (y - anchor_pos[2][1]) ** 2)
 h[3] = sym.sqrt((x - anchor_pos[3][0]) ** 2 + (y - anchor_pos[3][1]) ** 2)
 h[4] = theta
 
-####### Load Data #######
-# Measurement, control input
+# Load measurement, control input data
 RTLS_data = loadmat('Exp_data.mat')
 msr_data = RTLS_data['measurement_data']
 ctrl_data = RTLS_data['control_data']
 sampling_time = RTLS_data['sampling_time'][0]
 
-####### Initialize estimator #######
-Est1 = estimator.FIR(f, h, state_set, input_set, 10)
+# Initialize estimator
+x_init = np.array([2.5, 0.5, 0])
+z_init = msr_data[0]
+Est1 = estimator.FIR(f, h, state_set, input_set, 10, x_init, z_init)
 
-####### Simulation #######
+# Simulation
 num_iteration = msr_data.shape[0]
 x_hat_data = np.zeros((num_iteration, len(state_set)))
 time_start = time.time()
@@ -50,8 +50,8 @@ for i in range(num_iteration):
 time_end = time.time()
 print('Elapsed time: ', time_end - time_start)
 
-####### Plot Results #######
-plt.plot(x_hat_data[15:, 0], x_hat_data[15:, 1])
+# Plot Results
+plt.plot(x_hat_data[:, 0], x_hat_data[:, 1])
 plt.xlabel('X (m)')
 plt.ylabel('Y (m)')
 plt.show()
