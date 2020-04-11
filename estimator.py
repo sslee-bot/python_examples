@@ -18,10 +18,8 @@ class FIR:
         # Functions
         self.f_func = sym.lambdify(state_set + input_set, f)
         self.h_func = sym.lambdify(state_set + input_set, h)
-        self.Jacobian_F_func = sym.lambdify(
-            state_set + input_set, f.jacobian(state_set))
-        self.Jacobian_H_func = sym.lambdify(
-            state_set + input_set, h.jacobian(state_set))
+        self.Jacobian_F_func = sym.lambdify(state_set + input_set, f.jacobian(state_set))
+        self.Jacobian_H_func = sym.lambdify(state_set + input_set, h.jacobian(state_set))
 
         # self.F = self.Jacobian_F_func(3,3,0,0,0,0.1)
         # self.H = self.Jacobian_H_func(3,3,0,0,0,0.1)
@@ -55,10 +53,8 @@ class FIR:
     def update_array(self):
         self.F_array = np.concatenate((self.F_array[1:], [self.F]))
         self.H_array = np.concatenate((self.H_array[1:], [self.H]))
-        self.z_tilde_array = np.concatenate(
-            (self.z_tilde_array[1:], [[self.z_tilde]]))
-        self.u_tilde_array = np.concatenate(
-            (self.u_tilde_array[1:], [[self.u_tilde]]))
+        self.z_tilde_array = np.concatenate((self.z_tilde_array[1:], [[self.z_tilde]]))
+        self.u_tilde_array = np.concatenate((self.u_tilde_array[1:], [[self.u_tilde]]))
 
     def Mat_F(self, a, c):  # F_function
         output = np.eye(self.dim_x)
@@ -90,8 +86,7 @@ class FIR:
                 row_end = self.dim_z * (i + 2)
                 col_start = self.dim_x * j
                 col_end = self.dim_x * (j + 1)
-                output[row_start:row_end, col_start:col_end] = self.Mat_Gamma(
-                    i + 1, j + 1, 0)
+                output[row_start:row_end, col_start:col_end] = self.Mat_Gamma(i + 1, j + 1, 0)
         return output
 
     def C_big(self):

@@ -13,7 +13,7 @@ v_l, v_theta, dt = sym.symbols('v_l v_theta dt')
 state_set = (x, y, theta)
 input_set = (v_l, v_theta, dt)
 # Position values of fixed anchors #1 ~ #4
-anchor_pos = np.array([[0.0, 0.0], [0.0, 6.0], [6.0, 6.0], [6.0, 0.0]])
+anchor_pos = np.array([[-3.0, -3.0], [-3.0, 3.0], [3.0, 3.0], [3.0, -3.0]])
 # State and measurement equations
 f = sym.Matrix(1, 3, [0, 0, 0])
 f[0] = x + v_l * dt * sym.cos(theta + 0.5 * v_theta * dt)

@@ -10,7 +10,7 @@ def update_state(pose, control_input, wheelbase, sampling_time):
         [[np.cos(pose[2]), -wheelbase * np.sin(pose[2])], [np.sin(pose[2]), wheelbase * np.cos(pose[2])], [0, 1]])
     pose_dot = S @ control_input
     output = pose + pose_dot * sampling_time
-    output[2] = (output[2] + np.pi) % (2 * np.pi) - np.pi
+    output[2] = controller.wrap_angle(output[2])
     return output
 
 
