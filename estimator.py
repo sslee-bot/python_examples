@@ -2,6 +2,73 @@ import numpy as np
 import sympy as sym
 
 
+class EKF:
+    def __init__(self, f, h, state_set, input_set, P=None, Q=None, R=None, x_init=None):
+        # Scalar values
+        self.dim_x = len(f)
+        self.dim_z = len(h)
+        self.dim_u = len(input_set)
+        self.alpha = True
+        # Initial state, measurement, control input
+        if x_init is None:
+            self.x_hat = np.zeros(self.dim_x)
+        else:
+            self.x_hat = x_init
+        self.z = np.zeros(self.dim_z)
+        self.u = np.zeros(self.dim_u)
+        # Covariances
+        if P is None:
+            self.P = 0.1 * np.eye(self.dim_x)
+        else:
+            self.P = P
+        if Q is None:
+            self.Q = 0.1 * np.eye(self.dim_x)
+        else:
+            self.Q = Q
+        if R is None:
+            self.R = 0.1 * np.eye(self.dim_z)
+        else:
+            self.R = R
+        # Functions
+        self.f_func = sym.lambdify(state_set + input_set, f)
+        self.h_func = sym.lambdify(state_set + input_set, h)
+        self.Jacobian_F_func = sym.lambdify(state_set + input_set, f.jacobian(state_set))
+        self.Jacobian_H_func = sym.lambdify(state_set + input_set, h.jacobian(state_set))
+
+        self.f_hat = np.zeros(self.dim_x)
+        self.h_hat = np.zeros(self.dim_z)
+        self.F = np.eye(self.dim_x)
+        self.H = np.ones((self.dim_z, self.dim_x))
+        self.f_hat = np.zeros(self.dim_x)
+        self.h_hat = np.zeros(self.dim_z)
+
+        self.evaluate_current_values(self.z, self.u, self.alpha)
+
+    def evaluate_current_values(self, z, u, alpha):
+        self.z = z
+        self.u = u
+
+        args = np.concatenate((self.x_hat, self.u))
+        self.F = self.Jacobian_F_func(*args)
+        self.H = self.Jacobian_H_func(*args)
+        self.f_hat = self.f_func(*args)[0]
+        self.h_hat = self.h_func(*args)[0]
+        if not alpha:
+            self.z = self.h_hat
+
+    def estimate(self, z, u, alpha):
+        self.evaluate_current_values(z, u, alpha)
+
+        F_tran = np.transpose(self.F)
+        H_tran = np.transpose(self.H)
+        self.P = self.F @ self.P @ F_tran + self.Q
+        S = self.H @ self.P @ H_tran + self.R
+        K = self.P @ H_tran @ np.linalg.inv(S)
+        self.x_hat = self.f_hat + K @ (self.z - self.h_hat)
+        self.P = (np.eye(self.dim_x) - K @ self.H) @ self.P
+        return self.x_hat
+
+
 class FIR:
     def __init__(self, f, h, state_set, input_set, N, x_init=None, z_init=None):
         # Scalar values

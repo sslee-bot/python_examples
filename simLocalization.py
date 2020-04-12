@@ -3,7 +3,6 @@ import sympy as sym
 from scipy.io import loadmat
 import estimator
 import matplotlib.pyplot as plt
-import time
 
 # State variables
 x, y, theta = sym.symbols('x y theta')
@@ -34,24 +33,35 @@ sampling_time = RTLS_data['sampling_time'][0]
 # Initialize estimator
 x_init = np.array([2.5, 0.5, 0])
 z_init = msr_data[0]
-Est1 = estimator.FIR(f, h, state_set, input_set, 10, x_init, z_init)
+Est1 = estimator.EKF(f, h, state_set, input_set)
+Est2 = estimator.FIR(f, h, state_set, input_set, 15, x_init, z_init)
 
 # Simulation
 num_iteration = msr_data.shape[0]
-x_hat_data = np.zeros((num_iteration, len(state_set)))
-time_start = time.time()
+EKF_data = np.zeros((num_iteration, len(state_set)))
+FIR_data = np.zeros((num_iteration, len(state_set)))
 for i in range(num_iteration):
     msr = msr_data[i]
     ctrl = np.concatenate((ctrl_data[i], np.array(sampling_time)))
     alpha = not (0 in msr)
-    x_hat = Est1.estimate(msr, ctrl, alpha)
-    x_hat_data[i] = x_hat
-    print(x_hat)
-time_end = time.time()
-print('Elapsed time: ', time_end - time_start)
+
+    x_hat_EKF = Est1.estimate(msr, ctrl, alpha)
+    x_hat_FIR = Est2.estimate(msr, ctrl, alpha)
+    EKF_data[i] = x_hat_EKF
+    FIR_data[i] = x_hat_FIR
 
 # Plot Results
-plt.plot(x_hat_data[:, 0], x_hat_data[:, 1])
+plt.figure(figsize=(10, 5))
+plt.subplot(121)
+plt.plot(EKF_data[:, 0], EKF_data[:, 1])
+plt.axis('equal')
 plt.xlabel('X (m)')
 plt.ylabel('Y (m)')
+plt.title('EKF')
+plt.subplot(122)
+plt.plot(FIR_data[:, 0], FIR_data[:, 1])
+plt.axis('equal')
+plt.xlabel('X (m)')
+plt.ylabel('Y (m)')
+plt.title('FIR')
 plt.show()
