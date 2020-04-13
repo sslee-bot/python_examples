@@ -131,12 +131,13 @@ class PF_Gaussian:
     def evaluate_weight(self):
         for i in range(self.num_particle):
             error = self.z - self.z_hat_particle[i]
-            self.weight[i] = 1.0 / ((2.0*np.pi)**(self.dim_z/2.0)*np.linalg.det(self.R)**0.5) * np.exp(-np.transpose(error) @ np.linalg.inv(self.R) @ error/2.0)
+            self.weight[i] = 1.0 / ((2.0 * np.pi) ** (self.dim_z / 2.0) * np.linalg.det(self.R) ** 0.5) * np.exp(
+                -np.transpose(error) @ np.linalg.inv(self.R) @ error / 2.0)
         sum_weight = np.sum(self.weight)
         self.weight /= sum_weight
 
     def resampling(self):
-        num_eff = 1.0 / np.sum(self.weight**2)
+        num_eff = 1.0 / np.sum(self.weight ** 2)
         if num_eff < 0.1 * self.num_particle:
             temp_particle = np.copy(self.particle)
             q_cumsum = np.cumsum(self.weight)
