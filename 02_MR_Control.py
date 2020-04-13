@@ -1,5 +1,5 @@
 import numpy as np
-import controller
+from modules import controller
 import matplotlib.pyplot as plt
 
 
