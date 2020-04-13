@@ -34,36 +34,49 @@ sampling_time = RTLS_data['sampling_time'][0]
 x_init = np.array([2.5, 0.5, 0])
 z_init = msr_data[0]
 P = np.zeros((3, 3))
-Q = np.array([[0.2, 0.0, 0.0], [0.0, 0.2, 0.0], [0.0, 0.0, 0.1]])
+Q = np.array([[0.01, 0.0, 0.0], [0.0, 0.01, 0.0], [0.0, 0.0, 0.01]])
 R = np.array(
-    [[0.2, 0.0, 0.0, 0.0, 0.0], [0.0, 0.2, 0.0, 0.0, 0.0], [0.0, 0.0, 0.2, 0.0, 0.0], [0.0, 0.0, 0.0, 0.2, 0.0],
-     [0.0, 0.0, 0.0, 0.0, 0.1]])
+    [[0.02, 0.0, 0.0, 0.0, 0.0], [0.0, 0.02, 0.0, 0.0, 0.0], [0.0, 0.0, 0.02, 0.0, 0.0], [0.0, 0.0, 0.0, 0.02, 0.0],
+     [0.0, 0.0, 0.0, 0.0, 0.01]])
 Est1 = estimator.EKF(f, h, state_set, input_set, P, Q, R, x_init)
-Est2 = estimator.FIR(f, h, state_set, input_set, 15, x_init, z_init)
+Est2 = estimator.PF_Gaussian(f, h, state_set, input_set, P, Q, R, 500, x_init)
+Est3 = estimator.FIR(f, h, state_set, input_set, 15, x_init, z_init)
 
 # Simulation
 num_iteration = msr_data.shape[0]
 EKF_data = np.zeros((num_iteration, len(state_set)))
+PF_data = np.zeros((num_iteration, len(state_set)))
 FIR_data = np.zeros((num_iteration, len(state_set)))
 for i in range(num_iteration):
+    print(i)
     msr = msr_data[i]
     ctrl = np.concatenate((ctrl_data[i], np.array(sampling_time)))
     alpha = not (0 in msr)
 
     x_hat_EKF = Est1.estimate(msr, ctrl, alpha)
-    x_hat_FIR = Est2.estimate(msr, ctrl, alpha)
+    x_hat_PF = Est2.estimate(msr, ctrl, alpha)
+    x_hat_FIR = Est3.estimate(msr, ctrl, alpha)
     EKF_data[i] = x_hat_EKF
+    PF_data[i] = x_hat_PF
     FIR_data[i] = x_hat_FIR
 
 # Plot Results
-plt.figure(figsize=(10, 5))
-plt.subplot(121)
+plt.figure(figsize=(15, 5))
+plt.subplot(131)
 plt.plot(EKF_data[:, 0], EKF_data[:, 1])
 plt.axis('equal')
 plt.xlabel('X (m)')
 plt.ylabel('Y (m)')
 plt.title('EKF')
-plt.subplot(122)
+
+plt.subplot(132)
+plt.plot(PF_data[:, 0], PF_data[:, 1])
+plt.axis('equal')
+plt.xlabel('X (m)')
+plt.ylabel('Y (m)')
+plt.title('PF')
+
+plt.subplot(133)
 plt.plot(FIR_data[:, 0], FIR_data[:, 1])
 plt.axis('equal')
 plt.xlabel('X (m)')

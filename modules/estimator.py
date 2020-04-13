@@ -39,12 +39,10 @@ class EKF:
         self.h_hat = np.zeros(self.dim_z)
         self.F = np.eye(self.dim_x)
         self.H = np.ones((self.dim_z, self.dim_x))
-        self.f_hat = np.zeros(self.dim_x)
-        self.h_hat = np.zeros(self.dim_z)
 
         self.evaluate_current_values(self.z, self.u, self.alpha)
 
-    def evaluate_current_values(self, z, u, alpha):
+    def evaluate_current_values(self, z, u, alpha=True):
         self.z = z
         self.u = u
 
@@ -56,7 +54,7 @@ class EKF:
         if not alpha:
             self.z = self.h_hat
 
-    def estimate(self, z, u, alpha):
+    def estimate(self, z, u, alpha=True):
         self.evaluate_current_values(z, u, alpha)
 
         F_tran = np.transpose(self.F)
@@ -66,6 +64,98 @@ class EKF:
         K = self.P @ H_tran @ np.linalg.inv(S)
         self.x_hat = self.f_hat + K @ (self.z - self.h_hat)
         self.P = (np.eye(self.dim_x) - K @ self.H) @ self.P
+        return self.x_hat
+
+
+class PF_Gaussian:
+    def __init__(self, f, h, state_set, input_set, P=None, Q=None, R=None, num_particle=None, x_init=None):
+        # Scalar values
+        self.dim_x = len(f)
+        self.dim_z = len(h)
+        self.dim_u = len(input_set)
+        self.alpha = True
+        # Initial state, measurement, control input
+        if x_init is None:
+            self.x_hat = np.zeros(self.dim_x)
+        else:
+            self.x_hat = x_init
+        self.z = np.zeros(self.dim_z)
+        self.u = np.zeros(self.dim_u)
+        # Covariances
+        if P is None:
+            self.P = 0.1 * np.eye(self.dim_x)
+        else:
+            self.P = P
+        if Q is None:
+            self.Q = 0.1 * np.eye(self.dim_x)
+        else:
+            self.Q = Q
+        if R is None:
+            self.R = 0.1 * np.eye(self.dim_z)
+        else:
+            self.R = R
+        # Functions
+        self.f_func = sym.lambdify(state_set + input_set, f)
+        self.h_func = sym.lambdify(state_set + input_set, h)
+        # Particles
+        if num_particle is None:
+            self.num_particle = 500
+        else:
+            self.num_particle = num_particle
+        self.particle = np.random.multivariate_normal(self.x_hat, self.P, self.num_particle)
+        self.weight = np.ones(self.num_particle) / self.num_particle
+        self.z_hat_particle = np.zeros((self.num_particle, self.dim_z))
+
+    def evaluate_current_values(self, z, u, alpha=True):
+        self.z = z
+        self.u = u
+        self.alpha = alpha
+        if not alpha:
+            args = np.concatenate((self.x_hat, self.u))
+            self.z = self.h_func(*args)[0]
+
+    def propagate(self):
+        for i in range(self.num_particle):
+            args = np.concatenate((self.particle[i], self.u))
+            self.particle[i] = self.f_func(*args)[0]
+        noise_propagate = np.random.multivariate_normal(np.zeros(self.dim_x), self.Q, self.num_particle)
+        self.particle += noise_propagate
+
+    def predict_output(self):
+        for i in range(self.num_particle):
+            args = np.concatenate((self.particle[i], self.u))
+            self.z_hat_particle[i] = self.h_func(*args)[0]
+        noise_output = np.random.multivariate_normal(np.zeros(self.dim_z), self.R, self.num_particle)
+        self.z_hat_particle += noise_output
+
+    def evaluate_weight(self):
+        for i in range(self.num_particle):
+            error = self.z - self.z_hat_particle[i]
+            self.weight[i] = 1.0 / ((2.0*np.pi)**(self.dim_z/2.0)*np.linalg.det(self.R)**0.5) * np.exp(-np.transpose(error) @ np.linalg.inv(self.R) @ error/2.0)
+        sum_weight = np.sum(self.weight)
+        self.weight /= sum_weight
+
+    def resampling(self):
+        num_eff = 1.0 / np.sum(self.weight**2)
+        if num_eff < 0.1 * self.num_particle:
+            temp_particle = np.copy(self.particle)
+            q_cumsum = np.cumsum(self.weight)
+            rand_vector = np.random.rand(self.num_particle) * q_cumsum[-1]
+            for i in range(self.num_particle):
+                for j in range(self.num_particle):
+                    if rand_vector[i] < q_cumsum[j]:
+                        self.particle[i] = temp_particle[j]
+
+                        break
+            self.weight = np.ones(self.num_particle) / self.num_particle
+
+    def estimate(self, z, u, alpha=True):
+        self.evaluate_current_values(z, u, alpha)
+        self.propagate()
+        self.predict_output()
+        self.evaluate_weight()
+        self.resampling()
+        self.x_hat = self.weight @ self.particle
         return self.x_hat
 
 
@@ -110,7 +200,7 @@ class FIR:
         self.z_tilde_array = np.tile(self.z_tilde, (N, 1, 1))
         self.u_tilde_array = np.tile(self.u_tilde, (N, 1, 1))
 
-    def evaluate_current_values(self, z, u, alpha):
+    def evaluate_current_values(self, z, u, alpha=True):
         self.z = z
         self.u = u
         self.alpha = alpha
@@ -173,7 +263,7 @@ class FIR:
             output[:, col_start:col_end] = self.Mat_F(i + 1, 1)
         return output
 
-    def estimate(self, z, u, alpha):
+    def estimate(self, z, u, alpha=True):
         self.evaluate_current_values(z, u, alpha)
         self.evaluate_tilde()
         self.update_array()
