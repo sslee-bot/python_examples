@@ -33,7 +33,12 @@ sampling_time = RTLS_data['sampling_time'][0]
 # Initialize estimator
 x_init = np.array([2.5, 0.5, 0])
 z_init = msr_data[0]
-Est1 = estimator.EKF(f, h, state_set, input_set)
+P = np.zeros((3, 3))
+Q = np.array([[0.2, 0.0, 0.0], [0.0, 0.2, 0.0], [0.0, 0.0, 0.1]])
+R = np.array(
+    [[0.2, 0.0, 0.0, 0.0, 0.0], [0.0, 0.2, 0.0, 0.0, 0.0], [0.0, 0.0, 0.2, 0.0, 0.0], [0.0, 0.0, 0.0, 0.2, 0.0],
+     [0.0, 0.0, 0.0, 0.0, 0.1]])
+Est1 = estimator.EKF(f, h, state_set, input_set, P, Q, R, x_init)
 Est2 = estimator.FIR(f, h, state_set, input_set, 15, x_init, z_init)
 
 # Simulation
