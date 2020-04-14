@@ -33,13 +33,13 @@ sampling_time = RTLS_data['sampling_time'][0]
 # Initialize estimator
 x_init = np.array([2.5, 0.5, 0])
 z_init = msr_data[0]
+u_init = np.concatenate((ctrl_data[0], np.array(sampling_time)))
 P = np.zeros((3, 3))
-Q = np.array([[0.01, 0.0, 0.0], [0.0, 0.01, 0.0], [0.0, 0.0, 0.01]])
-R = np.array(
-    [[0.02, 0.0, 0.0, 0.0, 0.0], [0.0, 0.02, 0.0, 0.0, 0.0], [0.0, 0.0, 0.02, 0.0, 0.0], [0.0, 0.0, 0.0, 0.02, 0.0],
-     [0.0, 0.0, 0.0, 0.0, 0.01]])
+Q = np.diag([0.01, 0.01, 0.01])
+R = np.diag([0.02, 0.02, 0.02, 0.02, 0.1])
+
 Est1 = estimator.EKF(f, h, state_set, input_set, P, Q, R, x_init)
-Est2 = estimator.PF_Gaussian(f, h, state_set, input_set, P, Q, R, 500, x_init)
+Est2 = estimator.PF_Gaussian(f, h, state_set, input_set, 500, P, Q, R, x_init)
 Est3 = estimator.FIR(f, h, state_set, input_set, 15, x_init, z_init)
 
 # Simulation

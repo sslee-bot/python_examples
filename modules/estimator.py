@@ -42,7 +42,7 @@ class EKF:
 
         self.evaluate_current_values(self.z, self.u, self.alpha)
 
-    def evaluate_current_values(self, z, u, alpha=True):
+    def evaluate_current_values(self, z, u, alpha):
         self.z = z
         self.u = u
 
@@ -68,7 +68,7 @@ class EKF:
 
 
 class PF_Gaussian:
-    def __init__(self, f, h, state_set, input_set, P=None, Q=None, R=None, num_particle=None, x_init=None):
+    def __init__(self, f, h, state_set, input_set, num_particle=None, P=None, Q=None, R=None, x_init=None):
         # Scalar values
         self.dim_x = len(f)
         self.dim_z = len(h)
@@ -106,7 +106,7 @@ class PF_Gaussian:
         self.weight = np.ones(self.num_particle) / self.num_particle
         self.z_hat_particle = np.zeros((self.num_particle, self.dim_z))
 
-    def evaluate_current_values(self, z, u, alpha=True):
+    def evaluate_current_values(self, z, u, alpha):
         self.z = z
         self.u = u
         self.alpha = alpha
@@ -146,7 +146,6 @@ class PF_Gaussian:
                 for j in range(self.num_particle):
                     if rand_vector[i] < q_cumsum[j]:
                         self.particle[i] = temp_particle[j]
-
                         break
             self.weight = np.ones(self.num_particle) / self.num_particle
 
@@ -161,7 +160,7 @@ class PF_Gaussian:
 
 
 class FIR:
-    def __init__(self, f, h, state_set, input_set, N, x_init=None, z_init=None):
+    def __init__(self, f, h, state_set, input_set, N, x_init=None, z_init=None, u_init=None):
         # Scalar values
         self.dim_x = len(f)
         self.dim_z = len(h)
@@ -177,7 +176,10 @@ class FIR:
             self.z = np.zeros(self.dim_z)
         else:
             self.z = z_init
-        self.u = np.zeros(self.dim_u)
+        if u_init is None:
+            self.u = np.zeros(self.dim_u)
+        else:
+            self.u = u_init
         # Functions
         self.f_func = sym.lambdify(state_set + input_set, f)
         self.h_func = sym.lambdify(state_set + input_set, h)
@@ -201,7 +203,7 @@ class FIR:
         self.z_tilde_array = np.tile(self.z_tilde, (N, 1, 1))
         self.u_tilde_array = np.tile(self.u_tilde, (N, 1, 1))
 
-    def evaluate_current_values(self, z, u, alpha=True):
+    def evaluate_current_values(self, z, u, alpha):
         self.z = z
         self.u = u
         self.alpha = alpha
