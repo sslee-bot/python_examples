@@ -4,9 +4,8 @@ from scipy.io import loadmat
 from modules import estimator
 import matplotlib.pyplot as plt
 
-# State variables
+# State variables, Control inputs, Time-varying parameters
 x, y, z, x_dot, y_dot, z_dot = sym.symbols('x y z x_dot y_dot z_dot')
-# Control inputs, Time-varying parameters
 dt = sym.symbols('dt')
 state_set = (x, y, z, x_dot, y_dot, z_dot)
 input_set = (dt,)
