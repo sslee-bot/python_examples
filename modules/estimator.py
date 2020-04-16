@@ -125,13 +125,12 @@ class PF_Gaussian:
         for i in range(self.num_particle):
             args = np.concatenate((self.particle[i], self.u))
             self.z_hat_particle[i] = self.h_func(*args)[0]
-        noise_output = np.random.multivariate_normal(np.zeros(self.dim_z), self.R, self.num_particle)
-        self.z_hat_particle += noise_output
 
     def evaluate_weight(self):
         for i in range(self.num_particle):
             error = self.z - self.z_hat_particle[i]
-            self.weight[i] = 1.0 / ((2.0 * np.pi) ** (self.dim_z / 2.0) * np.linalg.det(self.R) ** 0.5) * np.exp(
+            self.weight[i] = self.weight[i] * 1.0 / (
+                        (2.0 * np.pi) ** (self.dim_z / 2.0) * np.linalg.det(self.R) ** 0.5) * np.exp(
                 -np.transpose(error) @ np.linalg.inv(self.R) @ error / 2.0)
         sum_weight = np.sum(self.weight)
         self.weight /= sum_weight

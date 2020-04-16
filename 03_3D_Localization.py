@@ -35,10 +35,10 @@ x_init = np.array([5.5, 3.5, 1.0, 0.0, 0.0, 0.0])
 z_init = msr_data[0]
 u_init = sampling_time[0]
 P = np.zeros((6, 6))
-Q = np.diag([0.5, 0.5, 0.5, 1.0, 1.0, 1.0])
-R = np.diag([0.1, 0.1, 0.1, 0.1])
+Q = np.diag([0.3, 0.3, 0.3, 1.0, 1.0, 1.0])
+R = np.diag([0.2, 0.2, 0.2, 0.2])
 Est1 = estimator.EKF(f, h, state_set, input_set, P, Q, R, x_init)
-Est2 = estimator.PF_Gaussian(f, h, state_set, input_set, 500, P, Q, R, x_init)
+Est2 = estimator.PF_Gaussian(f, h, state_set, input_set, 1000, P, Q, R, x_init)
 Est3 = estimator.FIR(f, h, state_set, input_set, 20, x_init, z_init, u_init)
 
 # Simulation
