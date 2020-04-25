@@ -68,7 +68,7 @@ class EKF:
 
 
 class PF_Gaussian:
-    def __init__(self, f, h, state_set, input_set, num_particle=None, P=None, Q=None, R=None, x_init=None):
+    def __init__(self, f, h, state_set, input_set, num_particle=500, P=None, Q=None, R=None, x_init=None):
         # Scalar values
         self.dim_x = len(f)
         self.dim_z = len(h)
@@ -98,10 +98,7 @@ class PF_Gaussian:
         self.f_func = sym.lambdify(state_set + input_set, f)
         self.h_func = sym.lambdify(state_set + input_set, h)
         # Particles
-        if num_particle is None:
-            self.num_particle = 500
-        else:
-            self.num_particle = num_particle
+        self.num_particle = num_particle
         self.particle = np.random.multivariate_normal(self.x_hat, self.P, self.num_particle)
         self.weight = np.ones(self.num_particle) / self.num_particle
         self.z_hat_particle = np.zeros((self.num_particle, self.dim_z))
@@ -130,7 +127,7 @@ class PF_Gaussian:
         for i in range(self.num_particle):
             error = self.z - self.z_hat_particle[i]
             self.weight[i] = self.weight[i] * 1.0 / (
-                        (2.0 * np.pi) ** (self.dim_z / 2.0) * np.linalg.det(self.R) ** 0.5) * np.exp(
+                    (2.0 * np.pi) ** (self.dim_z / 2.0) * np.linalg.det(self.R) ** 0.5) * np.exp(
                 -np.transpose(error) @ np.linalg.inv(self.R) @ error / 2.0)
         sum_weight = np.sum(self.weight)
         self.weight /= sum_weight
