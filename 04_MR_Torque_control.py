@@ -36,6 +36,19 @@ q = np.zeros(3)
 v_present = np.zeros(2)
 time_sequence = np.arange(0.0, 10.0, dt)
 num_iteration = len(time_sequence)
-q_data = np.zeros((3, num_iteration))
-v_data = np.zeros((2, num_iteration))
+torque_left_data = 0.03 * np.sin(time_sequence)
+torque_right_data = 0.03 * np.cos(time_sequence)
+control_data = np.transpose(np.vstack((torque_left_data, torque_right_data)))
+q_data = np.zeros((num_iteration, 3))
+v_data = np.zeros((num_iteration, 2))
 
+for i in range(num_iteration):
+    # Save data
+    q_data[i] = q
+    v_data[i] = v_present
+
+    # Get control input
+    tau = control_data[i]
+
+    # Solve dynamic equation
+    
