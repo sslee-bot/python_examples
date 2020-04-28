@@ -11,6 +11,13 @@ R = 0.2
 dt = 0.5
 
 theta, theta_dot = sym.symbols('theta theta_dot')
+tau_left, tau_right = sym.symbols('tau_left tau_right')
+tau = sym.Array([tau_left, tau_right])
+t = sym.symbols('t')
+v_lin = sym.Function('v_lin')(t)
+v_ang = sym.Function('v_ang')(t)
+v = sym.Array([v_lin, v_ang])
+v_dot = sym.Array([v_lin.diff(t), v_ang.diff(t)])
 
 # Matrices for Euler-Lagrange equation
 M = sym.Matrix([[m, 0.0, m * d * sym.sin(theta)], [0.0, m, -m * d * sym.cos(theta)],
@@ -31,24 +38,27 @@ F_bar = sym.transpose(S) @ F
 tau_d_bar = sym.transpose(S) @ tau_d
 B_bar = sym.transpose(S) @ B
 
-# Initialization for Simulation
-q = np.zeros(3)
-v_present = np.zeros(2)
-time_sequence = np.arange(0.0, 10.0, dt)
-num_iteration = len(time_sequence)
-torque_left_data = 0.03 * np.sin(time_sequence)
-torque_right_data = 0.03 * np.cos(time_sequence)
-control_data = np.transpose(np.vstack((torque_left_data, torque_right_data)))
-q_data = np.zeros((num_iteration, 3))
-v_data = np.zeros((num_iteration, 2))
+# Solve the equation
+# eq = M_bar @ v_dot + V_bar @ v + F_bar + tau_d_bar - B_bar @ tau
+# print(M_bar @ v_dot)
 
-for i in range(num_iteration):
-    # Save data
-    q_data[i] = q
-    v_data[i] = v_present
-
-    # Get control input
-    tau = control_data[i]
-
-    # Solve dynamic equation
-    
+# # Initialization for Simulation
+# q = np.zeros(3)
+# v_present = np.zeros(2)
+# time_sequence = np.arange(0.0, 10.0, dt)
+# num_iteration = len(time_sequence)
+# torque_left_data = 0.03 * np.sin(time_sequence)
+# torque_right_data = 0.03 * np.cos(time_sequence)
+# control_data = np.transpose(np.vstack((torque_left_data, torque_right_data)))
+# q_data = np.zeros((num_iteration, 3))
+# v_data = np.zeros((num_iteration, 2))
+#
+# for i in range(num_iteration):
+#     # Save data
+#     q_data[i] = q
+#     v_data[i] = v_present
+#
+#     # Get control input
+#     tau = control_data[i]
+#
+#     # Solve dynamic equation
