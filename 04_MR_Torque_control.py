@@ -1,7 +1,7 @@
 # import numpy as np
 import sympy as sym
-from modules import controller
-import matplotlib.pyplot as plt
+# from modules import controller
+# import matplotlib.pyplot as plt
 
 m = 1.0
 d = 0.1
@@ -14,10 +14,12 @@ theta, theta_dot = sym.symbols('theta theta_dot')
 tau_left, tau_right = sym.symbols('tau_left tau_right')
 tau = sym.Matrix([tau_left, tau_right])
 t = sym.symbols('t')
-v_lin = sym.Function('v_lin')(t)
-v_ang = sym.Function('v_ang')(t)
-v = sym.Matrix([v_lin, v_ang])
-v_dot = v.diff(t)
+v_lin = sym.Function('v_lin')
+v_ang = sym.Function('v_ang')
+v_lin_dot = sym.Derivative(v_lin(t), t)
+v_ang_dot = sym.Derivative(v_ang(t), t)
+v = sym.Matrix([v_lin(t), v_ang(t)])
+v_dot = sym.Matrix([v_lin_dot, v_ang_dot])
 
 # Matrices for Euler-Lagrange equation
 M = sym.Matrix([[m, 0.0, m * d * sym.sin(theta)], [0.0, m, -m * d * sym.cos(theta)],
@@ -41,9 +43,17 @@ B_bar = sym.transpose(S) * B
 # Solve the equation
 eq = M_bar * v_dot + V_bar * v + F_bar + tau_d_bar - B_bar * tau
 eq = eq.subs([(theta, 0.1), (theta_dot, 0.1), (tau_left, 0.1), (tau_right, 0.1)])
-print(eq[0])
-print(eq[1])
-# print(sym.dsolve((eq[0], eq[1]), (v_lin, v_ang), ics={v(0.0): [0.0, 0.0]}))
+eq1 = sym.Eq(eq[0], 0)
+eq2 = sym.Eq(eq[1], 0)
+print(eq1)
+print(eq2)
+# print(sym.dsolve(eq1))
+# print(sym.dsolve(eq1, v_lin(t)))
+print(sym.dsolve(eq1, v_lin(t), ics={v_lin(0): 0}))
+
+# print(sym.dsolve((eq1, eq2)))
+# print(sym.dsolve((eq1, eq2), [v_lin(t), v_ang(t)]))
+# print(sym.dsolve((eq1, eq2), [v_lin(t), v_ang(t)], ics={v_lin(0): 0, v_ang(0): 0}))
 
 # # Initialization for Simulation
 # q = np.zeros(3)
