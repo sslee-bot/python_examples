@@ -1,4 +1,4 @@
-import numpy as np
+# import numpy as np
 import sympy as sym
 from modules import controller
 import matplotlib.pyplot as plt
@@ -12,35 +12,38 @@ dt = 0.5
 
 theta, theta_dot = sym.symbols('theta theta_dot')
 tau_left, tau_right = sym.symbols('tau_left tau_right')
-tau = sym.Array([tau_left, tau_right])
+tau = sym.Matrix([tau_left, tau_right])
 t = sym.symbols('t')
 v_lin = sym.Function('v_lin')(t)
 v_ang = sym.Function('v_ang')(t)
-v = sym.Array([v_lin, v_ang])
-v_dot = sym.Array([v_lin.diff(t), v_ang.diff(t)])
+v = sym.Matrix([v_lin, v_ang])
+v_dot = v.diff(t)
 
 # Matrices for Euler-Lagrange equation
 M = sym.Matrix([[m, 0.0, m * d * sym.sin(theta)], [0.0, m, -m * d * sym.cos(theta)],
                 [m * d * sym.sin(theta), -m * d * sym.sin(theta), 1.0]])
 V = sym.Matrix(
     [[0.0, 0.0, m * d * theta_dot * sym.cos(theta)], [0.0, 0.0, m * d * theta_dot * sym.sin(theta)], [0.0, 0.0, 0.0]])
-F = np.zeros(3)
-tau_d = np.zeros(3)
+F = sym.zeros(3, 1)
+tau_d = sym.zeros(3, 1)
 B = 1.0 / r * sym.Matrix([[sym.cos(theta), sym.cos(theta)], [sym.sin(theta), sym.sin(theta)], [R, -R]])
 
 S = sym.Matrix([[sym.cos(theta), -d * sym.sin(theta)], [sym.sin(theta), d * sym.cos(theta)], [0.0, 1.0]])
 S_dot = sym.Matrix([[-sym.sin(theta) * theta_dot, -d * sym.cos(theta) * theta_dot],
                     [sym.cos(theta) * theta_dot, -d * sym.sin(theta) * theta_dot], [0.0, 0.0]])
 
-M_bar = sym.transpose(S) @ M @ S
-V_bar = sym.transpose(S) @ (M @ S_dot + V @ S)
-F_bar = sym.transpose(S) @ F
-tau_d_bar = sym.transpose(S) @ tau_d
-B_bar = sym.transpose(S) @ B
+M_bar = sym.transpose(S) * M * S
+V_bar = sym.transpose(S) * (M * S_dot + V * S)
+F_bar = sym.transpose(S) * F
+tau_d_bar = sym.transpose(S) * tau_d
+B_bar = sym.transpose(S) * B
 
 # Solve the equation
-# eq = M_bar @ v_dot + V_bar @ v + F_bar + tau_d_bar - B_bar @ tau
-# print(M_bar @ v_dot)
+eq = M_bar * v_dot + V_bar * v + F_bar + tau_d_bar - B_bar * tau
+eq = eq.subs([(theta, 0.1), (theta_dot, 0.1), (tau_left, 0.1), (tau_right, 0.1)])
+print(eq[0])
+print(eq[1])
+# print(sym.dsolve((eq[0], eq[1]), (v_lin, v_ang), ics={v(0.0): [0.0, 0.0]}))
 
 # # Initialization for Simulation
 # q = np.zeros(3)
