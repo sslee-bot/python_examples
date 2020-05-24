@@ -1,4 +1,4 @@
-# import numpy as np
+import numpy as np
 import sympy as sym
 # from modules import controller
 # import matplotlib.pyplot as plt
@@ -14,8 +14,8 @@ theta, theta_dot = sym.symbols('theta theta_dot')
 tau_left, tau_right = sym.symbols('tau_left tau_right')
 tau = sym.Matrix([tau_left, tau_right])
 t = sym.symbols('t')
-v_lin = sym.Function('v_lin')
-v_ang = sym.Function('v_ang')
+
+v_lin, v_ang = sym.symbols('v_lin v_ang', cls=sym.Function)
 v_lin_dot = sym.Derivative(v_lin(t), t)
 v_ang_dot = sym.Derivative(v_ang(t), t)
 v = sym.Matrix([v_lin(t), v_ang(t)])
@@ -40,38 +40,54 @@ F_bar = sym.transpose(S) * F
 tau_d_bar = sym.transpose(S) * tau_d
 B_bar = sym.transpose(S) * B
 
-# Solve the equation
+# Define the equation
 eq = M_bar * v_dot + V_bar * v + F_bar + tau_d_bar - B_bar * tau
-eq = eq.subs([(theta, 0.1), (theta_dot, 0.1), (tau_left, 0.1), (tau_right, 0.1)])
-eq1 = sym.Eq(eq[0], 0)
-eq2 = sym.Eq(eq[1], 0)
-print(eq1)
-print(eq2)
+# eq = eq.subs([(theta, 0.1), (theta_dot, 0.1), (tau_left, 0.1), (tau_right, 0.1)])
+eq1 = sym.simplify(sym.Eq(eq[0], 0))
+eq2 = sym.simplify(sym.Eq(eq[1], 0))
+# print(eq1)
+# print(eq2)
 # print(sym.dsolve(eq1))
 # print(sym.dsolve(eq1, v_lin(t)))
-print(sym.dsolve(eq1, v_lin(t), ics={v_lin(0): 0}))
+# print(sym.dsolve(eq1, v_lin(t), ics={v_lin(0): 0}))
+
+v_lin_sol = sym.dsolve(eq1, v_lin(t), ics={v_lin(0): 0}).rhs
 
 # print(sym.dsolve((eq1, eq2)))
 # print(sym.dsolve((eq1, eq2), [v_lin(t), v_ang(t)]))
 # print(sym.dsolve((eq1, eq2), [v_lin(t), v_ang(t)], ics={v_lin(0): 0, v_ang(0): 0}))
 
-# # Initialization for Simulation
-# q = np.zeros(3)
-# v_present = np.zeros(2)
-# time_sequence = np.arange(0.0, 10.0, dt)
-# num_iteration = len(time_sequence)
-# torque_left_data = 0.03 * np.sin(time_sequence)
-# torque_right_data = 0.03 * np.cos(time_sequence)
-# control_data = np.transpose(np.vstack((torque_left_data, torque_right_data)))
-# q_data = np.zeros((num_iteration, 3))
-# v_data = np.zeros((num_iteration, 2))
-#
-# for i in range(num_iteration):
-#     # Save data
-#     q_data[i] = q
-#     v_data[i] = v_present
-#
-#     # Get control input
-#     tau = control_data[i]
-#
-#     # Solve dynamic equation
+eq2_modified = eq2.subs(v_lin(t), v_lin_sol)
+print(eq2_modified)
+# v_ang_sol = sym.dsolve(eq2_modified, v_ang(t), ics={v_ang(0): 0}).rhs
+# print(v_ang_sol)
+
+
+# Initialization for Simulation
+q = np.zeros(3)
+v_present = np.zeros(2)
+time_sequence = np.arange(0.0, 5.0, dt)
+num_iteration = len(time_sequence)
+torque_left_data = 0.03 * np.sin(time_sequence)
+torque_right_data = 0.03 * np.cos(time_sequence)
+control_data = np.transpose(np.vstack((torque_left_data, torque_right_data)))
+q_data = np.zeros((num_iteration, 3))
+v_data = np.zeros((num_iteration, 2))
+
+for i in range(num_iteration):
+    # Save data
+    q_data[i] = q
+    v_data[i] = v_present
+
+    # Get control input
+    tau = control_data[i]
+
+    # Solve dynamic equation
+    v_present[0] = v_lin_sol.subs([(tau_left, tau[0]), (tau_right, tau[1]), (t, dt)])
+    eq_ang = eq2_modified.subs([(theta, q[2]), (theta_dot, v_present[1]), (tau_left, tau[0]), (tau_right, tau[1])])
+    v_ang_sol = sym.dsolve(eq_ang, v_ang(t))
+    constants = sym.solve(v_ang_sol.rhs.subs(t, 0) - v_present[1], dict=True)
+    v_present[1] = v_ang_sol.subs(*constants).subs(t, dt).rhs
+    print(v_present)
+    # q = q +
+
