@@ -3,11 +3,12 @@ from modules import controller
 import matplotlib.pyplot as plt
 
 
-def update_state(pose, control_input, wheelbase, sampling_time):
+def update_state(pose, control_input, base_to_center, sampling_time):
     # pose: x, y, theta
     # control_input: linear velocity, angular velocity
     S = np.array(
-        [[np.cos(pose[2]), -wheelbase * np.sin(pose[2])], [np.sin(pose[2]), wheelbase * np.cos(pose[2])], [0, 1]])
+        [[np.cos(pose[2]), -base_to_center * np.sin(pose[2])], [np.sin(pose[2]), base_to_center * np.cos(pose[2])],
+         [0, 1]])
     pose_dot = S @ control_input
     output = pose + pose_dot * sampling_time
     output[2] = controller.wrap_angle(output[2])
@@ -46,6 +47,7 @@ for i in range(400):
     x = update_state(x, v, d, dt)
     # Save data
     x_data[i] = x
+
 plt.plot(x_data[:, 0], x_data[:, 1], 'o')
 plt.xlabel('X (m)')
 plt.ylabel('Y (m)')

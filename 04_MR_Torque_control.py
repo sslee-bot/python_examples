@@ -1,8 +1,22 @@
 import numpy as np
 import sympy as sym
-# from modules import controller
-# import matplotlib.pyplot as plt
+from modules import controller
+import matplotlib.pyplot as plt
 
+
+def update_state(pose, control_input, base_to_center, sampling_time):
+    # pose: x, y, theta
+    # control_input: linear velocity, angular velocity
+    S = np.array(
+        [[np.cos(pose[2]), -base_to_center * np.sin(pose[2])], [np.sin(pose[2]), base_to_center * np.cos(pose[2])],
+         [0, 1]])
+    pose_dot = S @ control_input
+    output = pose + pose_dot * sampling_time
+    output[2] = controller.wrap_angle(output[2])
+    return output
+
+
+# Mass, wheelbase to center, wheel radius, and wheel to center line
 m = 1.0
 d = 0.1
 r = 0.05
@@ -11,8 +25,8 @@ R = 0.2
 dt = 0.5
 
 theta, theta_dot = sym.symbols('theta theta_dot')
-tau_left, tau_right = sym.symbols('tau_left tau_right')
-tau = sym.Matrix([tau_left, tau_right])
+tau_right, tau_left = sym.symbols('tau_right tau_left')
+tau = sym.Matrix([tau_right, tau_left])
 t = sym.symbols('t')
 
 v_lin, v_ang = sym.symbols('v_lin v_ang', cls=sym.Function)
@@ -42,35 +56,19 @@ B_bar = sym.transpose(S) * B
 
 # Define the equation
 eq = M_bar * v_dot + V_bar * v + F_bar + tau_d_bar - B_bar * tau
-# eq = eq.subs([(theta, 0.1), (theta_dot, 0.1), (tau_left, 0.1), (tau_right, 0.1)])
-eq1 = sym.simplify(sym.Eq(eq[0], 0))
-eq2 = sym.simplify(sym.Eq(eq[1], 0))
-# print(eq1)
-# print(eq2)
-# print(sym.dsolve(eq1))
-# print(sym.dsolve(eq1, v_lin(t)))
-# print(sym.dsolve(eq1, v_lin(t), ics={v_lin(0): 0}))
+eq1 = sym.Eq(eq[0], 0)
+eq2 = sym.Eq(eq[1], 0)
 
-v_lin_sol = sym.dsolve(eq1, v_lin(t), ics={v_lin(0): 0}).rhs
-
-# print(sym.dsolve((eq1, eq2)))
-# print(sym.dsolve((eq1, eq2), [v_lin(t), v_ang(t)]))
-# print(sym.dsolve((eq1, eq2), [v_lin(t), v_ang(t)], ics={v_lin(0): 0, v_ang(0): 0}))
-
-eq2_modified = eq2.subs(v_lin(t), v_lin_sol)
-print(eq2_modified)
-# v_ang_sol = sym.dsolve(eq2_modified, v_ang(t), ics={v_ang(0): 0}).rhs
-# print(v_ang_sol)
-
+v_lin_sol = sym.dsolve(eq1, v_lin(t))
 
 # Initialization for Simulation
 q = np.zeros(3)
 v_present = np.zeros(2)
-time_sequence = np.arange(0.0, 5.0, dt)
+time_sequence = np.arange(0.0, 10.0, dt)
 num_iteration = len(time_sequence)
-torque_left_data = 0.03 * np.sin(time_sequence)
-torque_right_data = 0.03 * np.cos(time_sequence)
-control_data = np.transpose(np.vstack((torque_left_data, torque_right_data)))
+torque_right_data = 0.03 * np.sin(time_sequence)
+torque_left_data = 0.03 * np.cos(time_sequence)
+control_data = np.transpose(np.vstack((torque_right_data, torque_left_data)))
 q_data = np.zeros((num_iteration, 3))
 v_data = np.zeros((num_iteration, 2))
 
@@ -83,11 +81,21 @@ for i in range(num_iteration):
     tau = control_data[i]
 
     # Solve dynamic equation
-    v_present[0] = v_lin_sol.subs([(tau_left, tau[0]), (tau_right, tau[1]), (t, dt)])
-    eq_ang = eq2_modified.subs([(theta, q[2]), (theta_dot, v_present[1]), (tau_left, tau[0]), (tau_right, tau[1])])
-    v_ang_sol = sym.dsolve(eq_ang, v_ang(t))
-    constants = sym.solve(v_ang_sol.rhs.subs(t, 0) - v_present[1], dict=True)
-    v_present[1] = v_ang_sol.subs(*constants).subs(t, dt).rhs
-    print(v_present)
-    # q = q +
+    constants1 = sym.solve(v_lin_sol.rhs.subs(t, 0) - v_present[0], dict=True)
+    v_present[0] = v_lin_sol.subs(*constants1).subs([(t, dt), (tau_right, tau[0]), (tau_left, tau[1])]).rhs
 
+    eq_ang = eq2.subs(
+        [(theta, q[2]), (theta_dot, v_present[1]), (tau_right, tau[0]), (tau_left, tau[1]), (v_lin(t), v_present[0])])
+    # Here, still bug exists when i=11
+    v_ang_sol = sym.dsolve(sym.simplify(eq_ang), v_ang(t))
+    constants2 = sym.solve(v_ang_sol.rhs.subs(t, 0) - v_present[1], dict=True)
+    v_present[1] = v_ang_sol.subs(*constants2).subs(t, dt).rhs
+
+    # Update
+    q = update_state(q, v_present, d, dt)
+    print(q)
+
+plt.plot(q_data[:, 0], q_data[:, 1], 'o')
+plt.xlabel('X (m)')
+plt.ylabel('Y (m)')
+plt.show()
