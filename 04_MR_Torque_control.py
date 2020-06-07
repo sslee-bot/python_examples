@@ -86,7 +86,7 @@ for i in range(num_iteration):
 
     eq_ang = eq2.subs(
         [(theta, q[2]), (theta_dot, v_present[1]), (tau_right, tau[0]), (tau_left, tau[1]), (v_lin(t), v_present[0])])
-    # Here, still bug exists when i=11
+    # Here, still bug exists when i=10
     v_ang_sol = sym.dsolve(sym.simplify(eq_ang), v_ang(t))
     constants2 = sym.solve(v_ang_sol.rhs.subs(t, 0) - v_present[1], dict=True)
     v_present[1] = v_ang_sol.subs(*constants2).subs(t, dt).rhs
