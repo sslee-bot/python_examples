@@ -1,8 +1,5 @@
 import numpy as np
-import control
-
-from scipy import signal
-# import random
+import matplotlib.pyplot as plt
 
 # The number of robots, target positions, initial positions
 num_robot = 14
@@ -34,13 +31,14 @@ A[13, (4, 5)] = True
 
 num_edge = int(len(np.argwhere(A == True)) / 2)
 
-print(num_edge)
-
 # Simulation
 dt = 0.1
 alpha = 0.05
+# poles = np.ones(num_robot - 2)
 # poles = np.ones(num_robot - 2, dtype=complex)
-poles_list = [1.0 + 1j * 1.0 for i in range(num_robot - 2)]
+
+# poles_list = [1.0 + 1j * 1.0 for i in range(num_robot - 2)]
+poles_list = [0.1 + 1j * 0.0 for i in range(num_robot - 2)]
 num_iteration = 200
 
 for iteration in range(num_iteration):
@@ -62,11 +60,24 @@ for iteration in range(num_iteration):
     S_sqrt = np.diag(s_sqrt)
     U = U_svd[:, :-2] @ S_sqrt[:-2, :-2]
     V = S_sqrt[:-2, :-2] @ V_svd[:-2, :]
-    pp_arg1 = np.zeros((num_robot - 2, num_robot - 2), dtype=complex)
-    pp_arg2 = U[:-2, :] @ V[:, :-2]
-    print(pp_arg1)
-    print(pp_arg2)
-    # temp = control.acker(pp_arg1, pp_arg2, poles_list)
-    # temp = signal.place_poles(pp_arg1, pp_arg2, poles_list)
-    # print(temp)
-    # K = np.concatenate
+    K = np.linalg.inv(V[:, :-2]) @ -np.diag(poles_list) @ np.linalg.inv(U[:-2, :])
+    # Control
+    z_dot = np.zeros_like(z)
+    for i in range(num_robot - 2):
+        for j in range(num_robot):
+            if j == i:
+                continue
+            z_dot[i] = z_dot[i] + K[i][i] * L[i][j] * (z[j] - z[i])
+    d_bar = np.linalg.norm(z_target[-1] - z_target[-2])
+    diff_leaders = z[-1] - z[-2]
+    z_dot[-2] = alpha * diff_leaders * (np.linalg.norm(diff_leaders) ** 2 - d_bar ** 2)
+    z_dot[-1] = -z_dot[-2]
+    z = z + z_dot * dt
+
+# Result
+plt.plot(z_target.real, z_target.imag, '*', label='References')
+plt.plot(z.real, z.imag, 'o', label='Robots')
+plt.xlabel('X (m)')
+plt.ylabel('Y (m)')
+plt.legend()
+plt.show()
