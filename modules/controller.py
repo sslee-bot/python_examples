@@ -37,7 +37,8 @@ class Kinematic:
 
 
 class NN_Lewis:
-    def __init__(self, dt, gamma1, gamma2, h, k4=1.0, kappa=0.1, num_neuron=10):
+    def __init__(self, dt, gamma1, gamma2, h, k4=1.0, kappa=1.0, coeff_V=0.001, coeff_W=0.001, coeff_F=1.0, coeff_G=1.0,
+                 num_neuron=10):
         self.dt = dt
         self.kinematic = Kinematic(gamma1, gamma2, h)
         self.vc = np.zeros(2)
@@ -47,10 +48,10 @@ class NN_Lewis:
         self.num_neuron = num_neuron
         self.K4 = k4 * np.ones((2, 2))
         self.kappa = kappa
-        self.V = np.ones((num_nn_input, num_neuron))
-        self.W = np.ones((num_neuron, 2))
-        self.F = 0.01 * np.eye(num_neuron)
-        self.G = 0.01 * np.eye(num_nn_input)
+        self.V = coeff_V * np.ones((num_nn_input, num_neuron))
+        self.W = coeff_W * np.ones((num_neuron, 2))
+        self.F = coeff_F * np.eye(num_neuron)
+        self.G = coeff_G * np.eye(num_nn_input)
         self.f_hat = np.zeros(2)
         self.tau_bar = np.zeros(2)
 
