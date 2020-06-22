@@ -37,8 +37,8 @@ class Kinematic:
 
 
 class NN_Lewis:
-    def __init__(self, dt, gamma1, gamma2, h, k4=1.0, kappa=1.0, coeff_V=0.001, coeff_W=0.001, coeff_F=1.0, coeff_G=1.0,
-                 num_neuron=10):
+    def __init__(self, dt, gamma1, gamma2, h, k4=0.05, kappa=0.01, coeff_V=0.001, coeff_W=0.001, coeff_F=0.1,
+                 coeff_G=0.1, num_neuron=4):
         self.dt = dt
         self.kinematic = Kinematic(gamma1, gamma2, h)
         self.vc = np.zeros(2)
@@ -58,7 +58,7 @@ class NN_Lewis:
     def neural_network(self, nn_input, ec):
         # Tuning NN weights
         sigma = activation_sigmoid(self.V.transpose() @ nn_input)
-        sigma_prime = np.diag(sigma) @ (np.eye(self.num_neuron) - sigma)
+        sigma_prime = np.diag(sigma) @ (np.eye(self.num_neuron) - np.diag(sigma))
         W_dot = np.outer(self.F @ sigma, ec) - np.outer(self.F @ sigma_prime @ self.V.transpose() @ nn_input,
                                                         ec) - self.kappa * np.linalg.norm(ec) * self.F @ self.W
         V_dot = np.outer(self.G @ nn_input, (sigma_prime.transpose() @ self.W @ ec)) - self.kappa * np.linalg.norm(

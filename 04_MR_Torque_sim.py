@@ -64,7 +64,7 @@ v_lin_sol = sym.dsolve(eq1, v_lin(t))
 # Initialization for Simulation
 q = np.zeros(3)
 v_present = np.zeros(2)
-time_sequence = np.arange(0.0, 10.0, dt)
+time_sequence = np.arange(0.0, 5.0, dt)
 num_iteration = len(time_sequence)
 torque_right_data = 0.03 * np.sin(time_sequence)
 torque_left_data = 0.03 * np.cos(time_sequence)
