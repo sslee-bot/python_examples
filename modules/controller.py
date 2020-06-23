@@ -32,7 +32,11 @@ class Kinematic:
         alpha = wrap_angle(alpha)
 
         self.v[0] = self.gamma1 * e * np.cos(alpha)
-        self.v[1] = -self.gamma2 * alpha - self.gamma1 * np.cos(alpha) * np.sin(alpha) / alpha * (alpha + self.h * phi)
+        if alpha == 0:
+            self.v[1] = 0.0
+        else:
+            self.v[1] = -self.gamma2 * alpha - self.gamma1 * np.cos(alpha) * np.sin(alpha) / alpha * (
+                        alpha + self.h * phi)
         return self.v
 
 
