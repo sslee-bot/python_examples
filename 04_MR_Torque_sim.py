@@ -29,10 +29,9 @@ tau_right, tau_left = sym.symbols('tau_right tau_left')
 tau = sym.Matrix([tau_right, tau_left])
 t = sym.symbols('t')
 
-v_lin, v_ang = sym.symbols('v_lin v_ang', cls=sym.Function)
-v_lin_dot = sym.Derivative(v_lin(t), t)
-v_ang_dot = sym.Derivative(v_ang(t), t)
-v = sym.Matrix([v_lin(t), v_ang(t)])
+v_lin, v_ang = sym.symbols('v_lin v_ang')
+v_lin_dot, v_ang_dot = sym.symbols('v_lin_dot v_ang_dot')
+v = sym.Matrix([v_lin, v_ang])
 v_dot = sym.Matrix([v_lin_dot, v_ang_dot])
 
 # Matrices for Euler-Lagrange equation
@@ -54,17 +53,17 @@ F_bar = sym.transpose(S) * F
 tau_d_bar = sym.transpose(S) * tau_d
 B_bar = sym.transpose(S) * B
 
-# Define the equation
+# Define and solve the equation
 eq = M_bar * v_dot + V_bar * v + F_bar + tau_d_bar - B_bar * tau
 eq1 = sym.Eq(eq[0], 0)
-eq2 = sym.Eq(0.01 * eq[1], 0)  # 0.01 is special treatment for feasibility of sym.dsolve(eq2)
-
-v_lin_sol = sym.dsolve(eq1, v_lin(t))
+eq2 = sym.Eq(eq[1], 0)
+v_dot_sol = sym.solve([eq1, eq2], v_dot)
 
 # Initialization for Simulation
 q = np.zeros(3)
 v_present = np.zeros(2)
-time_sequence = np.arange(0.0, 5.0, dt)
+v_dot_present = np.zeros(2)
+time_sequence = np.arange(0.0, 10.0, dt)
 num_iteration = len(time_sequence)
 torque_right_data = 0.03 * np.sin(time_sequence)
 torque_left_data = 0.03 * np.cos(time_sequence)
@@ -80,15 +79,13 @@ for i in range(num_iteration):
     # Get control input
     tau = control_data[i]
 
-    # Solve dynamic equation
-    constants1 = sym.solve(v_lin_sol.rhs.subs(t, 0) - v_present[0], dict=True)
-    v_present[0] = v_lin_sol.subs(*constants1).subs([(t, dt), (tau_right, tau[0]), (tau_left, tau[1])]).rhs
-
-    eq_ang = eq2.subs(
-        [(theta, q[2]), (theta_dot, v_present[1]), (tau_right, tau[0]), (tau_left, tau[1]), (v_lin(t), v_present[0])])
-    v_ang_sol = sym.dsolve(sym.simplify(eq_ang), v_ang(t))
-    constants2 = sym.solve(v_ang_sol.rhs.subs(t, 0) - v_present[1], dict=True)
-    v_present[1] = v_ang_sol.subs(*constants2).subs(t, dt).rhs
+    # Obtain v_present
+    v_dot_present[0] = v_dot_sol[v_lin_dot].subs([(tau_right, tau[0]), (tau_left, tau[1])])
+    v_dot_present[1] = v_dot_sol[v_ang_dot].subs(
+        [(theta, q[2]), (theta_dot, v_present[1]), (v_lin, v_present[0]), (v_ang, v_present[1]), (tau_right, tau[0]),
+         (tau_left, tau[1])])
+    v_present[0] += v_dot_present[0] * dt
+    v_present[1] += v_dot_present[1] * dt
 
     # Update
     q = update_state(q, v_present, d, dt)
