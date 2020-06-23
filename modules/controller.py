@@ -37,19 +37,19 @@ class Kinematic:
 
 
 class NN_Lewis:
-    def __init__(self, dt, gamma1, gamma2, h, k4=0.05, kappa=0.01, coeff_V=0.001, coeff_W=0.001, coeff_F=0.1,
-                 coeff_G=0.1, num_neuron=4):
+    def __init__(self, dt, gamma1, gamma2, h, k4=1.0, kappa=0.1, coeff_F=0.01, coeff_G=0.01, num_neuron=10):
         self.dt = dt
         self.kinematic = Kinematic(gamma1, gamma2, h)
         self.vc = np.zeros(2)
+        self.vc_pre = np.zeros(2)
         self.vc_dot = np.zeros(2)
         num_nn_input = 7  # elements: '1', vc, vc_dot, v
         self.num_nn_input = num_nn_input
         self.num_neuron = num_neuron
-        self.K4 = k4 * np.ones((2, 2))
+        self.k4 = k4
         self.kappa = kappa
-        self.V = coeff_V * np.ones((num_nn_input, num_neuron))
-        self.W = coeff_W * np.ones((num_neuron, 2))
+        self.V = np.zeros((num_nn_input, num_neuron))
+        self.W = np.zeros((num_neuron, 2))
         self.F = coeff_F * np.eye(num_neuron)
         self.G = coeff_G * np.eye(num_nn_input)
         self.f_hat = np.zeros(2)
@@ -69,11 +69,12 @@ class NN_Lewis:
         self.f_hat = self.W.transpose() @ sigma
 
     def control(self, x, x_ref, v):
-        vc = self.kinematic.control(x, x_ref)
-        self.vc_dot = (vc - self.vc) / self.dt
-        self.vc = vc
-        ec = vc - v
+        ec = self.vc - v
         nn_input = np.array([1.0, *self.vc, *self.vc_dot, *v])
         self.neural_network(nn_input, ec)
-        self.tau_bar = self.f_hat + self.K4 @ ec
+        self.tau_bar = self.f_hat + self.k4 * ec
+
+        self.vc_pre = self.vc.copy()
+        self.vc = self.kinematic.control(x, x_ref)
+        self.vc_dot = (self.vc - self.vc_pre) / self.dt
         return self.tau_bar
