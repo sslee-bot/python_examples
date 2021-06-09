@@ -6,6 +6,11 @@
 * Matplotlib
 * Scipy (for loading MATLAB .mat file)
 
+```
+sudo apt install python3-pip
+pip3 install numpy sympy matplotlib scipy
+```
+
 ## 2. Codes
 ### 2.1. 01_2D_Localization.py
 <img src="/figs/01_Result.png" title="01_Result" alt="01_Result"></img>
