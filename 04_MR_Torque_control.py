@@ -82,7 +82,7 @@ for i in range(num_iteration):
     v_data[i] = v_present
 
     # Get control input
-    B_bar_present = np.array(B_bar.subs(theta, q[2])).astype(np.float)
+    B_bar_present = np.array(B_bar.subs(theta, q[2])).astype(float)
     tau = np.linalg.inv(B_bar_present) @ Ctrl1.control(q, q_ref, v_present)
 
     # Obtain v_present

@@ -3,6 +3,7 @@ import sympy as sym
 from scipy.io import loadmat
 from modules import estimator
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 # State variables, Control inputs, Time-varying parameters
 x, y, z, x_dot, y_dot, z_dot = sym.symbols('x y z x_dot y_dot z_dot')

@@ -1,10 +1,10 @@
 # RobotSimPython
 ## 1. Intro
 ### 1.1. Dependencies
-* Numpy
-* Sympy
-* Matplotlib
-* Scipy (for loading MATLAB .mat file)
+* numpy 1.23.0 (CAUTION: version 1.24 causes error)
+* sympy 1.11.1
+* matplotlib 3.1.2
+* scipy 1.3.3 (for loading MATLAB .mat file)
 
 ```
 sudo apt install python3-pip
