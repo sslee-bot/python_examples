@@ -1,4 +1,4 @@
-# RobotSimPython
+# python_examples
 ## 1. Intro
 ### 1.1. Dependencies
 * numpy 1.23.0 (CAUTION: version 1.24 causes error)
